@@ -29,4 +29,5 @@ class CoursesResource(BaseRDBApplicationResource):
 
     @classmethod
     def get_data_resource_info(cls):
-        return "cloud_computing_f21", "courses"
+        # return "cloud_computing_f21", "courses"
+        return "oh_app", "courses"
