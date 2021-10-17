@@ -6,7 +6,8 @@ from datetime import datetime
 
 import utils.rest_utils as rest_utils
 
-from application_services.CoursesResource.courses_service import CoursesResource
+from application_services.CoursesResource.courses_service \
+    import CoursesResource
 from database_services.RDBService import RDBService as RDBService
 
 logging.basicConfig(level=logging.DEBUG)
@@ -17,7 +18,7 @@ app = Flask(__name__)
 CORS(app)
 
 
-##################################################################################################################
+#########################################################################
 
 # This path simply echoes to check that the app is working.
 # The path is /health and the only method is GETs
@@ -29,79 +30,279 @@ def health_check():
     return rsp
 
 
-# To do Remove later. Solely for explanatory purposes.
-# The method take any REST request, and produces a response indicating what
-# the parameters, headers, etc. are. This is simply for education purposes.
-#
-@app.route("/api/demo/<parameter1>", methods=["GET", "POST", "PUT", "DELETE"])
-@app.route("/api/demo/", methods=["GET", "POST", "PUT", "DELETE"])
-def demo(parameter1=None):
-    """
-    Returns a JSON object containing a description of the received request.
-    :param parameter1: The first path parameter.
-    :return: JSON document containing information about the request.
-    """
-
-    # DFF To do -- We should wrap with an exception pattern.
-    #
-
-    # Mostly for isolation. The rest of the method is isolated from the specifics of Flask.
-    inputs = rest_utils.RESTContext(request, {"parameter1": parameter1})
-
-    # DFF To do -- We should replace with logging.
-    r_json = inputs.to_json()
-    msg = {
-        "/demo received the following inputs": inputs.to_json()
-    }
-    print("/api/demo/<parameter> received/returned:\n", msg)
-
-    rsp = Response(json.dumps(msg), status=200, content_type="application/json")
-    return rsp
-
-
-
 @app.route('/')
-def hello_world():
-    return '<u>Hello World!</u>'
+def landing_page():
+    return '<u>OH Application Courses Microservice</u>'
 
 
-@app.route('/gabrielle')
-def hello_gabrielle():
-    return '<u>Yay! Gabrielle is here!!!!!!!</u>'
+@app.route('/courses', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def course_collection():
+    """
+    1. HTTP GET return all courses.
+    2. HTTP POST with body --> create a course, i.e --> Machine Learning
+    3. HTTP GET update all courses that match the provided where clause
+    with the updated data
+    --> JSON must be nested as follows
+    {
+        "update_fields": {
+            "field1": "value",
+            "field2": "value",
+            ...
+            "last_field": "value"
+        },
+        "where_fields": {
+            "field1": "value",
+            "field2": "value",
+            ...
+            "last_field": "value"
+        }
+    :return: response from desired action
+    """
+    try:
+        inputs = rest_utils.RESTContext(request)
+        rest_utils.log_request("course_collection", inputs)
 
-@app.route('/imdb/artists/<prefix>')
-def get_artists_by_prefix(prefix):
-    res = IMDBArtistResource.get_by_name_prefix(prefix)
-    rsp = Response(json.dumps(res), status=200, content_type="application/json")
+        if inputs.method == "GET":
+            res = CoursesResource.get_by_template(None)
+            if res is not None:
+                res = CoursesResource.get_links(res)
+                rsp = Response(json.dumps(res, default=str), status=200,
+                               content_type="application/json")
+            else:
+                rsp = Response("No data found!", status=404,
+                               content_type="text/plain")
+        elif inputs.method == "POST":
+            res = CoursesResource.create(inputs.data)
+            if res == 9:
+                rsp = Response("Course already exists!", status=404,
+                               content_type="text/plain")
+            elif res is not None:
+                rsp = Response("Success! Created course with the given " +
+                               "information.", status=201,
+                               content_type="text/plain")
+            else:
+                rsp = Response("Failed! Unprocessable entity.",
+                               status=422, content_type="text/plain")
+        elif inputs.method == "PUT":
+            data_template = inputs.data['update_fields']
+            where_template = inputs.data['where_fields']
+            res = CoursesResource.update_by_template(data_template,
+                                                     where_template)
+            if res is not None:
+                rsp = Response("Success! The given data for the courses "
+                               + "that matched was updated as requested.",
+                               status=200, content_type="text/plain")
+            else:
+                rsp = Response("Failed! Matching courses not found or " +
+                               "invalid data.", status=404,
+                               content_type="text/plain")
+        elif inputs.method == "DELETE":
+            res = CoursesResource.delete_by_template(None)
+            if res is not None:
+                rsp = Response("Success! Deleted all courses.",
+                               status=200, content_type="text/plain")
+            else:
+                rsp = Response("Failed! Could not delete all courses.",
+                               status=404, content_type="text/plain")
+        else:
+            rsp = Response("NOT IMPLEMENTED", status=501)
+
+    except Exception as e:
+        # HTTP status code.
+        print("/courses, e = ", e)
+        rsp = Response("INTERNAL ERROR", status=500,
+                       content_type="text/plain")
+
     return rsp
 
 
-@app.route('/users', methods=['GET', 'POST'])
-def user_collection():
+@app.route('/courses/<course_id>', methods=['GET', 'PUT', 'DELETE'])
+def specific_course(course_id):
     """
-    1. HTTP GET return all users.
-    2. HTTP POST with body --> create a user, i.e --> database.
-    :return:
+    1. HTTP GET return a specific course by ID.
+    2. HTTP PUT match course by ID and update specific fields
+    3. HTTP DELETE match course ID and delete it
+    :param course_id: course ID as a string in this format -
+    "year_sem_dept_number_section" e.g. "2021_Fall_COMS_E6156_001"
+    :return: response from desired action
     """
-    res = UserResource.get_by_template(None)
-    rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
+    try:
+        inputs = rest_utils.RESTContext(request)
+        rest_utils.log_request("specific_course", inputs)
+
+        if inputs.method == "GET":
+            res = CoursesResource.get_by_course_id(course_id)
+            if res is not None:
+                res = CoursesResource.get_links(res)
+                rsp = Response(json.dumps(res, default=str), status=200,
+                               content_type="application/json")
+            else:
+                rsp = Response("Failed! Course ID not found.", status=404,
+                               content_type="text/plain")
+        elif inputs.method == "PUT":
+            res = CoursesResource.update_by_course_id(course_id,
+                                                      inputs.data)
+            if res is not None:
+                rsp = Response("Success! The given data for the course " +
+                               course_id + " was updated as requested.",
+                               status=200, content_type="text/plain")
+            else:
+                rsp = Response("Failed! Course ID not found or invalid " +
+                               "data.", status=404,
+                               content_type="text/plain")
+        elif inputs.method == "DELETE":
+            test = CoursesResource.get_by_course_id(course_id)
+            if test:
+                res = CoursesResource.delete_by_course_id(course_id)
+                if res is not None:
+                    rsp = Response("Success! Deleted course " + course_id,
+                                   status=200, content_type="text/plain")
+                else:
+                    rsp = Response("Failed! Course ID not found.",
+                                   status=404, content_type="text/plain")
+            else:
+                rsp = Response("No courses with the given Course ID.",
+                               status=404, content_type="text/plain")
+        else:
+            rsp = Response("NOT IMPLEMENTED", status=501)
+
+    except Exception as e:
+        # HTTP status code.
+        print("/courses/" + str(course_id) + ", e = ", e)
+        rsp = Response("INTERNAL ERROR", status=500,
+                       content_type="text/plain")
+
     return rsp
 
-@app.route('/users/<user_id>', methods=['GET', 'PUT', 'DELETE'])
-def specific_user(user_id):
-    """
-    1. Get a specific one by ID.
-    2. Update body and update.
-    3. Delete would ID and delete it.
-    :param user_id:
-    :return:
-    """
-    pass
 
-@app.route('/<db_schema>/<table_name>/<column_name>/<prefix>')
-def get_by_prefix(db_schema, table_name, column_name, prefix):
-    res = RDBService.get_by_prefix(db_schema, table_name, column_name, prefix)
-    rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
+@app.route('/courses/professor/<professor_name>',
+           methods=['GET', 'PUT', 'DELETE'])
+def specific_professor(professor_name):
+    """
+    1. HTTP GET return a specific course by professor name.
+    2. HTTP PUT match course by professor name and update specific fields
+    3. HTTP DELETE match course by professor name and delete it
+    :param professor_name: professor name, use %20 for spaces -
+    e.g. "/courses/professor/Donald%20Ferguson"
+    :return: response from desired action
+    """
+    try:
+        inputs = rest_utils.RESTContext(request)
+        rest_utils.log_request("specific_professor", inputs)
+
+        if inputs.method == "GET":
+            res = CoursesResource.get_by_name("professors",
+                                              professor_name)
+            if res is not None:
+                res = CoursesResource.get_links(res)
+                rsp = Response(json.dumps(res, default=str), status=200,
+                               content_type="application/json")
+            else:
+                rsp = Response("Failed! Professor not found.", status=404,
+                               content_type="text/plain")
+        elif inputs.method == "PUT":
+            res = CoursesResource.update_by_name("professors",
+                                                 professor_name,
+                                                 inputs.data)
+            if res is not None:
+                rsp = Response("Success! The given data for the courses "
+                               + "taught by " + professor_name +
+                               " was updated as requested.",
+                               status=200, content_type="text/plain")
+            else:
+                rsp = Response("Failed! Professor not found or invalid "
+                               + "data.", status=404,
+                               content_type="text/plain")
+        elif inputs.method == "DELETE":
+            test = CoursesResource.get_by_name("professors",
+                                               professor_name)
+            if test:
+                res = CoursesResource.delete_by_name("professors",
+                                                     professor_name)
+                if res is not None:
+                    rsp = Response("Success! Deleted courses taught by " +
+                                   professor_name, status=200,
+                                   content_type="text/plain")
+                else:
+                    rsp = Response("Failed! Professor not found.",
+                                   status=404, content_type="text/plain")
+            else:
+                rsp = Response("No courses taught by " + professor_name,
+                               status=404, content_type="text/plain")
+        else:
+            rsp = Response("NOT IMPLEMENTED", status=501)
+
+    except Exception as e:
+        # HTTP status code.
+        print("/courses/professor/" + str(professor_name) + ", e = ", e)
+        rsp = Response("INTERNAL ERROR", status=500,
+                       content_type="text/plain")
+
+    return rsp
+
+
+@app.route('/courses/TA/<ta_name>',
+           methods=['GET', 'PUT', 'DELETE'])
+def specific_ta(ta_name):
+    """
+    1. HTTP GET return a specific course by TA name.
+    2. HTTP PUT match course by TA name and update specific fields
+    3. HTTP DELETE match course by TA name and delete it
+    :param ta_name: TA name, use %20 for spaces -
+    e.g. "/courses/professor/Pelin%20Cetin"
+    :return: response from desired action
+    """
+    try:
+        inputs = rest_utils.RESTContext(request)
+        rest_utils.log_request("specific_TA", inputs)
+
+        if inputs.method == "GET":
+            res = CoursesResource.get_by_name("TAs",
+                                              ta_name)
+            if res is not None:
+                res = CoursesResource.get_links(res)
+                rsp = Response(json.dumps(res, default=str), status=200,
+                               content_type="application/json")
+            else:
+                rsp = Response("Failed! TA not found.", status=404,
+                               content_type="text/plain")
+        elif inputs.method == "PUT":
+            res = CoursesResource.update_by_name("TAs",
+                                                 ta_name,
+                                                 inputs.data)
+            if res is not None:
+                rsp = Response("Success! The given data for the courses "
+                               + "supported by " + ta_name +
+                               " was updated as requested.",
+                               status=200, content_type="text/plain")
+            else:
+                rsp = Response("Failed! TA not found or invalid "
+                               + "data.", status=404,
+                               content_type="text/plain")
+        elif inputs.method == "DELETE":
+            test = CoursesResource.get_by_name("TAs", ta_name)
+            if test:
+                res = CoursesResource.delete_by_name("TAs",
+                                                     ta_name)
+                if res is not None:
+                    rsp = Response("Success! Deleted courses supported "
+                                   + "by " + ta_name, status=200,
+                                   content_type="text/plain")
+                else:
+                    rsp = Response("Failed! TA not found.", status=404,
+                                   content_type="text/plain")
+            else:
+                rsp = Response("No courses supported by " + ta_name,
+                               status=404, content_type="text/plain")
+        else:
+            rsp = Response("NOT IMPLEMENTED", status=501)
+
+    except Exception as e:
+        # HTTP status code.
+        print("/courses/TA/" + str(ta_name) + ", e = ", e)
+        rsp = Response("INTERNAL ERROR", status=500,
+                       content_type="text/plain")
+
     return rsp
 
 

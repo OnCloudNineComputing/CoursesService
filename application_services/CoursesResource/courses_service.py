@@ -9,7 +9,23 @@ class CoursesResource(BaseRDBApplicationResource):
 
     @classmethod
     def get_links(cls, resource_data):
-        pass
+        for r in resource_data:
+            links = []
+
+            id_values = []
+            id_keys = ["course_year", "course_sem", "dept", "course_number", "section"]
+            for key in id_keys:
+                id_values.append(str(r.get(key)))
+
+            course_id_str = "_".join(id_values)
+
+            self_link = {"rel": "self", "href": "/courses/" + course_id_str}
+            links.append(self_link)
+
+            r["links"] = links
+
+        return resource_data
+
 
     @classmethod
     def get_data_resource_info(cls):

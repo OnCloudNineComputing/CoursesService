@@ -20,6 +20,16 @@ class BaseApplicationResource(ABC):
 
     @classmethod
     @abstractmethod
+    def delete_by_template(cls, template):
+        pass
+
+    @classmethod
+    @abstractmethod
+    def update_by_template(cls, data_template, where_template):
+        pass
+
+    @classmethod
+    @abstractmethod
     def get_links(cls, resource_data):
         pass
 
@@ -35,10 +45,72 @@ class BaseRDBApplicationResource(BaseApplicationResource):
         super().__init__()
 
     @classmethod
-    def get_by_template(cls, template):
+    def get_by_template(cls, template, field_list=None):
         db_name, table_name = cls.get_data_resource_info()
         res = RDBService.find_by_template(db_name, table_name,
-                                          template, None)
+                                          template, field_list)
+        return res
+
+    @classmethod
+    def delete_by_template(cls, template):
+        db_name, table_name = cls.get_data_resource_info()
+        res = RDBService.delete_by_template(db_name, table_name,
+                                            template)
+        return res
+
+    @classmethod
+    def update_by_template(cls, data_template, where_template):
+        db_name, table_name = cls.get_data_resource_info()
+        res = RDBService.update_by_template(db_name, table_name,
+                                            data_template, where_template)
+        return res
+
+    @classmethod
+    def get_by_course_id(cls, course_id, field_list=None):
+        db_name, table_name = cls.get_data_resource_info()
+        res = RDBService.find_by_course_id(db_name, table_name,
+                                           course_id, field_list)
+        return res
+
+    @classmethod
+    def delete_by_course_id(cls, course_id):
+        db_name, table_name = cls.get_data_resource_info()
+        res = RDBService.delete_by_course_id(db_name, table_name,
+                                             course_id)
+        return res
+
+    @classmethod
+    def update_by_course_id(cls, course_id, data):
+        db_name, table_name = cls.get_data_resource_info()
+        res = RDBService.update_by_course_id(db_name, table_name,
+                                             course_id, data)
+        return res
+
+    @classmethod
+    def get_by_name(cls, person_type, name, field_list=None):
+        db_name, table_name = cls.get_data_resource_info()
+        res = RDBService.find_by_name(db_name, table_name,
+                                      person_type, name, field_list)
+        return res
+
+    @classmethod
+    def delete_by_name(cls, person_type, name):
+        db_name, table_name = cls.get_data_resource_info()
+        res = RDBService.delete_by_name(db_name, table_name,
+                                        person_type, name)
+        return res
+
+    @classmethod
+    def update_by_name(cls, person_type, name, data):
+        db_name, table_name = cls.get_data_resource_info()
+        res = RDBService.update_by_name(db_name, table_name,
+                                        person_type, name, data)
+        return res
+
+    @classmethod
+    def create(cls, data):
+        db_name, table_name = cls.get_data_resource_info()
+        res = RDBService.create(db_name, table_name, data)
         return res
 
     @classmethod
