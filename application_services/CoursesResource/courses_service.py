@@ -1,5 +1,5 @@
 from application_services.BaseApplicationResource import BaseRDBApplicationResource
-from database_services.RDBService import RDBService
+from database_services.CoursesRDBService import CoursesRDBService
 
 
 class CoursesResource(BaseRDBApplicationResource):
@@ -10,64 +10,70 @@ class CoursesResource(BaseRDBApplicationResource):
     @classmethod
     def get_by_course_id(cls, course_id, field_list=None):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = RDBService.find_by_course_id(db_name, table_name,
-                                           course_id, field_list)
+        res = CoursesRDBService.find_by_course_id(db_name, table_name,
+                                                  course_id, field_list)
         return res
 
     @classmethod
     def delete_by_course_id(cls, course_id):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = RDBService.delete_by_course_id(db_name, table_name,
-                                             course_id)
+        res = CoursesRDBService.delete_by_course_id(db_name, table_name,
+                                                    course_id)
         return res
 
     @classmethod
     def update_by_course_id(cls, course_id, data):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = RDBService.update_by_course_id(db_name, table_name,
-                                             course_id, data)
+        res = CoursesRDBService.update_by_course_id(db_name, table_name,
+                                                    course_id, data)
         return res
 
     @classmethod
     def get_by_course_code(cls, course_code, field_list=None):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = RDBService.find_by_course_id(db_name, table_name,
-                                           course_code, field_list)
+        res = CoursesRDBService.find_by_course_id(db_name, table_name,
+                                                  course_code, field_list)
         return res
 
     @classmethod
     def delete_by_course_code(cls, course_code):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = RDBService.delete_by_course_id(db_name, table_name,
-                                             course_code)
+        res = CoursesRDBService.delete_by_course_id(db_name, table_name,
+                                                    course_code)
         return res
 
     @classmethod
     def update_by_course_code(cls, course_code, data):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = RDBService.update_by_course_id(db_name, table_name,
-                                             course_code, data)
+        res = CoursesRDBService.update_by_course_id(db_name, table_name,
+                                                    course_code, data)
         return res
 
     @classmethod
     def get_by_name(cls, person_type, name, field_list=None):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = RDBService.find_by_name(db_name, table_name,
-                                      person_type, name, field_list)
+        res = CoursesRDBService.find_by_name(db_name, table_name,
+                                             person_type, name, field_list)
         return res
 
     @classmethod
     def delete_by_name(cls, person_type, name):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = RDBService.delete_by_name(db_name, table_name,
-                                        person_type, name)
+        res = CoursesRDBService.delete_by_name(db_name, table_name,
+                                               person_type, name)
         return res
 
     @classmethod
     def update_by_name(cls, person_type, name, data):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = RDBService.update_by_name(db_name, table_name,
-                                        person_type, name, data)
+        res = CoursesRDBService.update_by_name(db_name, table_name,
+                                               person_type, name, data)
+        return res
+
+    @classmethod
+    def create(cls, data):
+        db_name, table_name = cls.get_data_resource_info()
+        res = CoursesRDBService.create(db_name, table_name, data)
         return res
 
     @classmethod
@@ -91,5 +97,5 @@ class CoursesResource(BaseRDBApplicationResource):
 
     @classmethod
     def get_data_resource_info(cls):
-        # return "cloud_computing_f21", "courses"
-        return "oh_app", "courses"
+        return "cloud_computing_f21", "courses"
+        # return "oh_app", "courses"

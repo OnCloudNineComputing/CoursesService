@@ -22,7 +22,7 @@ CORS(app)
 
 # This path simply echoes to check that the app is working.
 # The path is /health and the only method is GETs
-@app.route("/health", methods=["GET"])
+@app.route("/api/health", methods=["GET"])
 def health_check():
     rsp_data = {"status": "healthy", "time": str(datetime.now())}
     rsp_str = json.dumps(rsp_data)
@@ -30,12 +30,12 @@ def health_check():
     return rsp
 
 
-@app.route('/')
+@app.route('/api')
 def landing_page():
     return '<u>OH Application Courses Microservice</u>'
 
 
-@app.route('/courses', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@app.route('/api/courses', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def course_collection():
     """
     1. HTTP GET return all courses.
