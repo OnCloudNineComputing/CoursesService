@@ -2,6 +2,7 @@ import pymysql
 import json
 import logging
 
+import database_services.BaseDataResource as BaseDataResource
 import middleware.context as context
 
 logging.basicConfig(level=logging.DEBUG)
@@ -9,7 +10,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class RDBService:
+class RDBService(BaseDataResource):
 
     def __init__(self):
         pass
@@ -19,7 +20,7 @@ class RDBService:
 
         db_connect_info = context.get_db_info()
 
-        logger.info("RDBService._get_db_connection:")
+        logger.info("RDBService.get_db_connection:")
         logger.info("\t HOST = " + db_connect_info['host'])
 
         db_info = context.get_db_info()
@@ -75,12 +76,7 @@ class RDBService:
             args = None
         else:
             for k, v in template.items():
-                if k == "TAs":
-                    terms.append("FIND_IN_SET(%s, " + k + ")")
-                elif k == "professors":
-                    terms.append("FIND_IN_SET(%s, " + k + ")")
-                else:
-                    terms.append(k + "=%s")
+                terms.append(k + "=%s")
                 args.append(v)
 
             clause = " WHERE " + " AND ".join(terms)
@@ -150,34 +146,55 @@ class RDBService:
         return res
 
     @classmethod
-    def split_course_id(cls, course_id):
+    def split_course_code(cls, course_code):
 
-        id_keys = ["course_year", "course_sem", "dept", "course_number", "section"]
-        parameters = course_id.split('_')
-        id_values = dict(zip(id_keys, parameters))
+        keys = ["course_year", "course_sem", "dept", "course_number", "section"]
+        parameters = course_code.split('_')
+        values = dict(zip(keys, parameters))
 
-        return id_values
+        return values
 
     @classmethod
     def find_by_course_id(cls, db_schema, table_name, course_id, field_list):
 
-        id_values = RDBService.split_course_id(course_id)
+        template = {"id": course_id}
 
-        return RDBService.find_by_template(db_schema, table_name, id_values, field_list)
+        return RDBService.find_by_template(db_schema, table_name, template, field_list)
 
     @classmethod
     def delete_by_course_id(cls, db_schema, table_name, course_id):
 
-        id_values = RDBService.split_course_id(course_id)
+        template = {"id": course_id}
 
-        return RDBService.delete_by_template(db_schema, table_name, id_values)
+        return RDBService.delete_by_template(db_schema, table_name, template)
 
     @classmethod
     def update_by_course_id(cls, db_schema, table_name, course_id, data):
 
-        id_values = RDBService.split_course_id(course_id)
+        template = {"id": course_id}
 
-        return RDBService.update_by_template(db_schema, table_name, data, id_values)
+        return RDBService.update_by_template(db_schema, table_name, data, template)
+
+    @classmethod
+    def find_by_course_code(cls, db_schema, table_name, course_code, field_list):
+
+        template = RDBService.split_course_id(course_code)
+
+        return RDBService.find_by_template(db_schema, table_name, template, field_list)
+
+    @classmethod
+    def delete_by_course_code(cls, db_schema, table_name, course_code):
+
+        template = RDBService.split_course_id(course_code)
+
+        return RDBService.delete_by_template(db_schema, table_name, template)
+
+    @classmethod
+    def update_by_course_code(cls, db_schema, table_name, course_code, data):
+
+        template = RDBService.split_course_id(course_code)
+
+        return RDBService.update_by_template(db_schema, table_name, data, template)
 
     @classmethod
     def get_name_inputs(cls, person_type, name):
