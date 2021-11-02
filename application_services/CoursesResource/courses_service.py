@@ -31,21 +31,21 @@ class CoursesResource(BaseRDBApplicationResource):
     @classmethod
     def get_by_course_code(cls, course_code, field_list=None):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.find_by_course_id(db_name, table_name,
+        res = CoursesRDBService.find_by_course_code(db_name, table_name,
                                                   course_code, field_list)
         return res
 
     @classmethod
     def delete_by_course_code(cls, course_code):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.delete_by_course_id(db_name, table_name,
+        res = CoursesRDBService.delete_by_course_code(db_name, table_name,
                                                     course_code)
         return res
 
     @classmethod
     def update_by_course_code(cls, course_code, data):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.update_by_course_id(db_name, table_name,
+        res = CoursesRDBService.update_by_course_code(db_name, table_name,
                                                     course_code, data)
         return res
 
@@ -88,8 +88,10 @@ class CoursesResource(BaseRDBApplicationResource):
 
             course_id_str = "_".join(id_values)
 
-            self_link = {"rel": "self", "href": "/courses/" + course_id_str}
-            links.append(self_link)
+            self_link_1 = {"rel": "self", "href": "/api/courses/" + str(r.get("id"))}
+            self_link_2 = {"rel": "self", "href": "/api/courses/" + course_id_str}
+            links.append(self_link_1)
+            links.append(self_link_2)
 
             r["links"] = links
 

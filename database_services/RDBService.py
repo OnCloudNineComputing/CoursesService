@@ -2,7 +2,7 @@ import pymysql
 import json
 import logging
 
-import database_services.BaseDataResource as BaseDataResource
+from database_services.BaseDataResource import BaseDataResource
 import middleware.context as context
 
 logging.basicConfig(level=logging.DEBUG)
@@ -13,7 +13,7 @@ logger.setLevel(logging.INFO)
 class RDBService(BaseDataResource):
 
     def __init__(self):
-        pass
+        super().__init__()
 
     @classmethod
     def get_db_connection(cls):
