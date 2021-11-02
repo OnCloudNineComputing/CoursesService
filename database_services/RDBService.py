@@ -111,6 +111,9 @@ class RDBService(BaseDataResource):
         res = cur.execute(sql, args=args)
         res = cur.fetchall()
 
+        sql = "ALTER TABLE " + db_schema + "." + table_name + " AUTO_INCREMENT = 1"
+        cur.execute(sql)
+
         conn.close()
 
         return res

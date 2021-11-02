@@ -207,7 +207,7 @@ class CoursesIntegrity(BaseIntegrityResource):
     def put_responses(cls, res):
         if res == 422:
             return 422
-        elif type(res) == tuple:
+        elif type(res) == tuple and len(res) == 2:
             if res[0] == 400:
                 return res[0]
         elif res is not None:
