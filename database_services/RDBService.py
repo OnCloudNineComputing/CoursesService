@@ -2,6 +2,7 @@ import pymysql
 import json
 import logging
 
+from database_services.BaseDataResource import BaseDataResource
 import middleware.context as context
 
 logging.basicConfig(level=logging.DEBUG)
@@ -9,17 +10,17 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class RDBService:
+class RDBService(BaseDataResource):
 
     def __init__(self):
-        pass
+        super().__init__()
 
     @classmethod
     def get_db_connection(cls):
 
         db_connect_info = context.get_db_info()
 
-        logger.info("RDBService._get_db_connection:")
+        logger.info("RDBService.get_db_connection:")
         logger.info("\t HOST = " + db_connect_info['host'])
 
         db_info = context.get_db_info()
@@ -75,12 +76,7 @@ class RDBService:
             args = None
         else:
             for k, v in template.items():
-                if k == "TAs":
-                    terms.append("FIND_IN_SET(%s, " + k + ")")
-                elif k == "professors":
-                    terms.append("FIND_IN_SET(%s, " + k + ")")
-                else:
-                    terms.append(k + "=%s")
+                terms.append(k + "=%s")
                 args.append(v)
 
             clause = " WHERE " + " AND ".join(terms)
@@ -88,14 +84,25 @@ class RDBService:
         return clause, args
 
     @classmethod
-    def find_by_template(cls, db_schema, table_name, template, field_list=None):
+    def find_by_template(cls, db_schema, table_name, template, order_by=None, limit=None, offset=None, field_list=None):
 
         wc, args = RDBService.get_where_clause_args(template)
 
         conn = RDBService.get_db_connection()
         cur = conn.cursor()
 
-        sql = "SELECT * FROM " + db_schema + "." + table_name + " " + wc
+        if field_list is None:
+            sql = "SELECT * FROM " + db_schema + "." + table_name + " " + wc
+        else:
+            sql = "SELECT " + ", ".join(field_list) + db_schema + "." + table_name + " " + wc
+
+        if order_by is not None:
+            sql += " ORDER BY " + order_by
+        if limit is not None:
+            sql += " LIMIT " + str(limit)
+        if offset is not None:
+            sql += " OFFSET " + str(offset)
+
         res = cur.execute(sql, args=args)
         res = cur.fetchall()
 
@@ -114,6 +121,9 @@ class RDBService:
         sql = "DELETE FROM " + db_schema + "." + table_name + " " + wc
         res = cur.execute(sql, args=args)
         res = cur.fetchall()
+
+        sql = "ALTER TABLE " + db_schema + "." + table_name + " AUTO_INCREMENT = 1"
+        cur.execute(sql)
 
         conn.close()
 
@@ -150,86 +160,21 @@ class RDBService:
         return res
 
     @classmethod
-    def split_course_id(cls, course_id):
-
-        id_keys = ["course_year", "course_sem", "dept", "course_number", "section"]
-        parameters = course_id.split('_')
-        id_values = dict(zip(id_keys, parameters))
-
-        return id_values
-
-    @classmethod
-    def find_by_course_id(cls, db_schema, table_name, course_id, field_list):
-
-        id_values = RDBService.split_course_id(course_id)
-
-        return RDBService.find_by_template(db_schema, table_name, id_values, field_list)
-
-    @classmethod
-    def delete_by_course_id(cls, db_schema, table_name, course_id):
-
-        id_values = RDBService.split_course_id(course_id)
-
-        return RDBService.delete_by_template(db_schema, table_name, id_values)
-
-    @classmethod
-    def update_by_course_id(cls, db_schema, table_name, course_id, data):
-
-        id_values = RDBService.split_course_id(course_id)
-
-        return RDBService.update_by_template(db_schema, table_name, data, id_values)
-
-    @classmethod
-    def get_name_inputs(cls, person_type, name):
-        name_template = dict()
-        name_template[person_type] = name
-        return name_template
-
-    @classmethod
-    def find_by_name(cls, db_schema, table_name, person_type, name, field_list):
-
-        name_template = RDBService.get_name_inputs(person_type, name)
-
-        return RDBService.find_by_template(db_schema, table_name, name_template, field_list)
-
-    @classmethod
-    def delete_by_name(cls, db_schema, table_name, person_type, name):
-
-        name_template = RDBService.get_name_inputs(person_type, name)
-
-        return RDBService.delete_by_template(db_schema, table_name, name_template)
-
-    @classmethod
-    def update_by_name(cls, db_schema, table_name, person_type, name, data):
-
-        name_template = RDBService.get_name_inputs(person_type, name)
-
-        return RDBService.update_by_template(db_schema, table_name, data, name_template)
-
-    @classmethod
     def create(cls, db_schema, table_name, create_data):
+        cols, vals, args = [], [], []
 
-        id_keys = ["course_year", "course_sem", "dept", "course_number", "section"]
-        course_id = {key: value for key, value in create_data.items() if key in id_keys}
-        course_matches = RDBService.find_by_template(db_schema, table_name, course_id)
-        if not course_matches:
-            cols = []
-            vals = []
-            args = []
+        for k, v in create_data.items():
+            cols.append(k)
+            vals.append('%s')
+            args.append(v)
 
-            for k, v in create_data.items():
-                cols.append(k)
-                vals.append('%s')
-                args.append(v)
+        cols_clause = "(" + ",".join(cols) + ")"
+        vals_clause = "VALUES (" + ",".join(vals) + ")"
 
-            cols_clause = "(" + ",".join(cols) + ")"
-            vals_clause = "VALUES (" + ",".join(vals) + ")"
+        sql_stmt = "INSERT INTO " + db_schema + "." + table_name + " " + cols_clause + \
+                   " " + vals_clause
 
-            sql_stmt = "INSERT INTO " + db_schema + "." + table_name + " " + cols_clause + \
-                       " " + vals_clause
+        res = RDBService.run_sql(sql_stmt, args)
 
-            res = RDBService.run_sql(sql_stmt, args)
+        return res
 
-            return res
-        else:
-            return 9

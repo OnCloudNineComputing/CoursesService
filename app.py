@@ -8,7 +8,8 @@ import utils.rest_utils as rest_utils
 
 from application_services.CoursesResource.courses_service \
     import CoursesResource
-from database_services.RDBService import RDBService as RDBService
+from integrity_services.CoursesIntegrityResource import CoursesIntegrity
+from database_services.CoursesRDBService import CoursesRDBService
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -22,7 +23,7 @@ CORS(app)
 
 # This path simply echoes to check that the app is working.
 # The path is /health and the only method is GETs
-@app.route("/health", methods=["GET"])
+@app.route("/api/health", methods=["GET"])
 def health_check():
     rsp_data = {"status": "healthy", "time": str(datetime.now())}
     rsp_str = json.dumps(rsp_data)
@@ -30,17 +31,17 @@ def health_check():
     return rsp
 
 
-@app.route('/')
+@app.route('/api')
 def landing_page():
     return '<u>OH Application Courses Microservice</u>'
 
 
-@app.route('/courses', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@app.route('/api/courses', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def course_collection():
     """
     1. HTTP GET return all courses.
     2. HTTP POST with body --> create a course, i.e --> Machine Learning
-    3. HTTP GET update all courses that match the provided where clause
+    3. HTTP PUT update all courses that match the provided where clause
     with the updated data
     --> JSON must be nested as follows
     {
@@ -56,6 +57,7 @@ def course_collection():
             ...
             "last_field": "value"
         }
+    4. HTTP DELETE delete all courses from the database
     :return: response from desired action
     """
     try:
@@ -63,243 +65,149 @@ def course_collection():
         rest_utils.log_request("course_collection", inputs)
 
         if inputs.method == "GET":
-            res = CoursesResource.get_by_template(None)
-            if res is not None:
-                res = CoursesResource.get_links(res)
-                rsp = Response(json.dumps(res, default=str), status=200,
-                               content_type="application/json")
-            else:
-                rsp = Response("No data found!", status=404,
-                               content_type="text/plain")
+            limit = 5
+            if inputs.limit:
+                if int(inputs.limit) < limit:
+                    limit = int(inputs.limit)
+            offset = 0
+            if inputs.offset:
+                offset = int(inputs.offset)
+            order_by = inputs.order_by
+            res = CoursesResource.get_by_template(inputs.args, order_by=order_by, limit=limit, offset=offset, field_list=inputs.fields)
+            if res:
+                res = CoursesResource.get_links(res, inputs)
+            rsp = CoursesIntegrity.course_collection_get_responses(res)
         elif inputs.method == "POST":
-            res = CoursesResource.create(inputs.data)
-            if res == 9:
-                rsp = Response("Course already exists!", status=404,
-                               content_type="text/plain")
-            elif res is not None:
-                rsp = Response("Success! Created course with the given " +
-                               "information.", status=201,
-                               content_type="text/plain")
+            validation = CoursesIntegrity.input_validation(inputs.data)
+            if validation[0] == 200:
+                inputs.data["start_time"] = datetime.strptime(inputs.data["start_time"], "%I:%M %p").time()
+                inputs.data["end_time"] = datetime.strptime(inputs.data["end_time"], "%I:%M %p").time()
+                res = CoursesResource.create(inputs.data)
             else:
-                rsp = Response("Failed! Unprocessable entity.",
-                               status=422, content_type="text/plain")
+                res = validation
+            rsp = CoursesIntegrity.post_responses(res)
         elif inputs.method == "PUT":
             data_template = inputs.data['update_fields']
             where_template = inputs.data['where_fields']
-            res = CoursesResource.update_by_template(data_template,
-                                                     where_template)
-            if res is not None:
-                rsp = Response("Success! The given data for the courses "
-                               + "that matched was updated as requested.",
-                               status=200, content_type="text/plain")
+            update_fields_val = CoursesIntegrity.type_validation(data_template)
+            where_fields_val = CoursesIntegrity.type_validation(where_template)
+            if update_fields_val[0] == 200 and where_fields_val[0] == 200:
+                res = CoursesResource.update_by_template(data_template, where_template)
             else:
-                rsp = Response("Failed! Matching courses not found or " +
-                               "invalid data.", status=404,
-                               content_type="text/plain")
+                error_code = 0
+                errors = {}
+                if update_fields_val[0] != 200:
+                    error_code = update_fields_val[0]
+                    errors["Errors in update_fields"] = update_fields_val[1]
+                if where_fields_val[0] != 200:
+                    error_code = where_fields_val[0]
+                    errors["Errors in where_fields"] = where_fields_val[1]
+                res = (error_code, errors)
+            rsp = CoursesIntegrity.course_collection_put_responses(res)
         elif inputs.method == "DELETE":
-            res = CoursesResource.delete_by_template(None)
-            if res is not None:
-                rsp = Response("Success! Deleted all courses.",
-                               status=200, content_type="text/plain")
-            else:
-                rsp = Response("Failed! Could not delete all courses.",
-                               status=404, content_type="text/plain")
+            res = CoursesResource.delete_by_template(inputs.args)
+            rsp = CoursesIntegrity.course_collection_delete_responses(res)
         else:
             rsp = Response("NOT IMPLEMENTED", status=501)
 
     except Exception as e:
         # HTTP status code.
-        print("/courses, e = ", e)
+        print("/api/courses, e = ", str(e))
         rsp = Response("INTERNAL ERROR", status=500,
                        content_type="text/plain")
 
     return rsp
 
 
-@app.route('/courses/<course_id>', methods=['GET', 'PUT', 'DELETE'])
-def specific_course(course_id):
+@app.route('/api/courses/<course_id>', methods=['GET', 'PUT', 'DELETE'])
+def course_by_id(course_id):
     """
     1. HTTP GET return a specific course by ID.
     2. HTTP PUT match course by ID and update specific fields
-    3. HTTP DELETE match course ID and delete it
-    :param course_id: course ID as a string in this format -
+    --> JSON must be nested as follows for update
+    {
+        "field1": "value",
+        "field2": "value",
+        ...
+        "last_field": "value"
+    }
+    3. HTTP DELETE match course by ID and delete it
+    :param course_id: course ID number, autogenerated in data table, or course code as a string in this format -
     "year_sem_dept_number_section" e.g. "2021_Fall_COMS_E6156_001"
     :return: response from desired action
     """
     try:
+        try:
+            test_id = int(course_id)
+            id_type = "id"
+        except ValueError as v:
+            test_id = course_id
+            id_dict = CoursesRDBService.split_course_code(test_id)
+            if len(id_dict.keys()) != 5:
+                raise ValueError("Invalid course code provided!")
+            id_validation = CoursesIntegrity.type_validation(id_dict)
+            if id_validation[0] == 400:
+                raise ValueError(id_validation[1])
+            else:
+                id_type = "course_code"
+
         inputs = rest_utils.RESTContext(request)
-        rest_utils.log_request("specific_course", inputs)
+        rest_utils.log_request("course_by_id", inputs)
 
         if inputs.method == "GET":
-            res = CoursesResource.get_by_course_id(course_id)
+            if id_type == "id":
+                res = CoursesResource.get_by_course_id(course_id, order_by=order_by, limit=inputs.limit, offset=inputs.offset, field_list=inputs.fields)
+            else:
+                res = CoursesResource.get_by_course_code(course_id, order_by=order_by, limit=inputs.limit, offset=inputs.offset, field_list=inputs.fields)
             if res is not None:
                 res = CoursesResource.get_links(res)
-                rsp = Response(json.dumps(res, default=str), status=200,
-                               content_type="application/json")
+            if id_type == "id":
+                rsp = CoursesIntegrity.course_by_id_get_responses(res)
             else:
-                rsp = Response("Failed! Course ID not found.", status=404,
-                               content_type="text/plain")
+                rsp = CoursesIntegrity.course_by_code_get_responses(res)
         elif inputs.method == "PUT":
-            res = CoursesResource.update_by_course_id(course_id,
-                                                      inputs.data)
-            if res is not None:
-                rsp = Response("Success! The given data for the course " +
-                               course_id + " was updated as requested.",
-                               status=200, content_type="text/plain")
-            else:
-                rsp = Response("Failed! Course ID not found or invalid " +
-                               "data.", status=404,
-                               content_type="text/plain")
-        elif inputs.method == "DELETE":
-            test = CoursesResource.get_by_course_id(course_id)
-            if test:
-                res = CoursesResource.delete_by_course_id(course_id)
-                if res is not None:
-                    rsp = Response("Success! Deleted course " + course_id,
-                                   status=200, content_type="text/plain")
+            validation = CoursesIntegrity.type_validation(inputs.data)
+            if validation[0] == 200:
+                if id_type == "id":
+                    res = CoursesResource.update_by_course_id(course_id, inputs.data)
                 else:
-                    rsp = Response("Failed! Course ID not found.",
-                                   status=404, content_type="text/plain")
+                    res = CoursesResource.update_by_course_code(course_id, inputs.data)
             else:
-                rsp = Response("No courses with the given Course ID.",
-                               status=404, content_type="text/plain")
+                res = validation
+            if id_type == "id":
+                rsp = CoursesIntegrity.course_by_id_put_responses(res, course_id)
+            else:
+                rsp = CoursesIntegrity.course_by_code_put_responses(res, course_id)
+        elif inputs.method == "DELETE":
+            if id_type == "id":
+                test = CoursesResource.get_by_course_id(course_id)
+                if test:
+                    res = CoursesResource.delete_by_course_id(course_id)
+                else:
+                    res = None
+            else:
+                test = CoursesResource.get_by_course_code(course_id)
+                if test:
+                    res = CoursesResource.delete_by_course_code(course_id)
+                else:
+                    res = None
+            if id_type == "id":
+                rsp = CoursesIntegrity.course_by_id_delete_responses(res, course_id)
+            else:
+                rsp = CoursesIntegrity.course_by_code_delete_responses(res, course_id)
         else:
             rsp = Response("NOT IMPLEMENTED", status=501)
 
-    except Exception as e:
-        # HTTP status code.
-        print("/courses/" + str(course_id) + ", e = ", e)
-        rsp = Response("INTERNAL ERROR", status=500,
-                       content_type="text/plain")
-
-    return rsp
-
-
-@app.route('/courses/professor/<professor_name>',
-           methods=['GET', 'PUT', 'DELETE'])
-def specific_professor(professor_name):
-    """
-    1. HTTP GET return a specific course by professor name.
-    2. HTTP PUT match course by professor name and update specific fields
-    3. HTTP DELETE match course by professor name and delete it
-    :param professor_name: professor name, use %20 for spaces -
-    e.g. "/courses/professor/Donald%20Ferguson"
-    :return: response from desired action
-    """
-    try:
-        inputs = rest_utils.RESTContext(request)
-        rest_utils.log_request("specific_professor", inputs)
-
-        if inputs.method == "GET":
-            res = CoursesResource.get_by_name("professors",
-                                              professor_name)
-            if res is not None:
-                res = CoursesResource.get_links(res)
-                rsp = Response(json.dumps(res, default=str), status=200,
-                               content_type="application/json")
-            else:
-                rsp = Response("Failed! Professor not found.", status=404,
-                               content_type="text/plain")
-        elif inputs.method == "PUT":
-            res = CoursesResource.update_by_name("professors",
-                                                 professor_name,
-                                                 inputs.data)
-            if res is not None:
-                rsp = Response("Success! The given data for the courses "
-                               + "taught by " + professor_name +
-                               " was updated as requested.",
-                               status=200, content_type="text/plain")
-            else:
-                rsp = Response("Failed! Professor not found or invalid "
-                               + "data.", status=404,
-                               content_type="text/plain")
-        elif inputs.method == "DELETE":
-            test = CoursesResource.get_by_name("professors",
-                                               professor_name)
-            if test:
-                res = CoursesResource.delete_by_name("professors",
-                                                     professor_name)
-                if res is not None:
-                    rsp = Response("Success! Deleted courses taught by " +
-                                   professor_name, status=200,
-                                   content_type="text/plain")
-                else:
-                    rsp = Response("Failed! Professor not found.",
-                                   status=404, content_type="text/plain")
-            else:
-                rsp = Response("No courses taught by " + professor_name,
-                               status=404, content_type="text/plain")
+    except ValueError as v:
+        print("/api/courses/" + str(course_id))
+        if type(v) == str:
+            rsp = Response(str(v), status=400, content_type="text/plain")
         else:
-            rsp = Response("NOT IMPLEMENTED", status=501)
+            rsp = Response(json.dumps(v, default=str), status=400, content_type="application/json")
 
     except Exception as e:
         # HTTP status code.
-        print("/courses/professor/" + str(professor_name) + ", e = ", e)
-        rsp = Response("INTERNAL ERROR", status=500,
-                       content_type="text/plain")
-
-    return rsp
-
-
-@app.route('/courses/TA/<ta_name>',
-           methods=['GET', 'PUT', 'DELETE'])
-def specific_ta(ta_name):
-    """
-    1. HTTP GET return a specific course by TA name.
-    2. HTTP PUT match course by TA name and update specific fields
-    3. HTTP DELETE match course by TA name and delete it
-    :param ta_name: TA name, use %20 for spaces -
-    e.g. "/courses/professor/Pelin%20Cetin"
-    :return: response from desired action
-    """
-    try:
-        inputs = rest_utils.RESTContext(request)
-        rest_utils.log_request("specific_TA", inputs)
-
-        if inputs.method == "GET":
-            res = CoursesResource.get_by_name("TAs",
-                                              ta_name)
-            if res is not None:
-                res = CoursesResource.get_links(res)
-                rsp = Response(json.dumps(res, default=str), status=200,
-                               content_type="application/json")
-            else:
-                rsp = Response("Failed! TA not found.", status=404,
-                               content_type="text/plain")
-        elif inputs.method == "PUT":
-            res = CoursesResource.update_by_name("TAs",
-                                                 ta_name,
-                                                 inputs.data)
-            if res is not None:
-                rsp = Response("Success! The given data for the courses "
-                               + "supported by " + ta_name +
-                               " was updated as requested.",
-                               status=200, content_type="text/plain")
-            else:
-                rsp = Response("Failed! TA not found or invalid "
-                               + "data.", status=404,
-                               content_type="text/plain")
-        elif inputs.method == "DELETE":
-            test = CoursesResource.get_by_name("TAs", ta_name)
-            if test:
-                res = CoursesResource.delete_by_name("TAs",
-                                                     ta_name)
-                if res is not None:
-                    rsp = Response("Success! Deleted courses supported "
-                                   + "by " + ta_name, status=200,
-                                   content_type="text/plain")
-                else:
-                    rsp = Response("Failed! TA not found.", status=404,
-                                   content_type="text/plain")
-            else:
-                rsp = Response("No courses supported by " + ta_name,
-                               status=404, content_type="text/plain")
-        else:
-            rsp = Response("NOT IMPLEMENTED", status=501)
-
-    except Exception as e:
-        # HTTP status code.
-        print("/courses/TA/" + str(ta_name) + ", e = ", e)
+        print("/api/courses/" + str(course_id) + ", e = ", str(e))
         rsp = Response("INTERNAL ERROR", status=500,
                        content_type="text/plain")
 

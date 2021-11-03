@@ -11,3 +11,10 @@ class BaseDataResource(ABC):
 
     def __init__(self):
         pass
+
+    @classmethod
+    @abstractmethod
+    def get_db_connection(cls):
+        pass
+
+
