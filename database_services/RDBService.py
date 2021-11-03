@@ -84,14 +84,25 @@ class RDBService(BaseDataResource):
         return clause, args
 
     @classmethod
-    def find_by_template(cls, db_schema, table_name, template, field_list=None):
+    def find_by_template(cls, db_schema, table_name, template, order_by=None, limit=None, offset=None, field_list=None):
 
         wc, args = RDBService.get_where_clause_args(template)
 
         conn = RDBService.get_db_connection()
         cur = conn.cursor()
 
-        sql = "SELECT * FROM " + db_schema + "." + table_name + " " + wc
+        if field_list is None:
+            sql = "SELECT * FROM " + db_schema + "." + table_name + " " + wc
+        else:
+            sql = "SELECT " + ", ".join(field_list) + db_schema + "." + table_name + " " + wc
+
+        if order_by is not None:
+            sql += " ORDER BY " + order_by
+        if limit is not None:
+            sql += " LIMIT " + str(limit)
+        if offset is not None:
+            sql += " OFFSET " + str(offset)
+
         res = cur.execute(sql, args=args)
         res = cur.fetchall()
 

@@ -17,11 +17,11 @@ class CoursesRDBService(RDBService):
         return values
 
     @classmethod
-    def find_by_course_id(cls, db_schema, table_name, course_id, field_list):
+    def find_by_course_id(cls, db_schema, table_name, course_id, order_by=None, limit=None, offset=None, field_list=None):
 
         template = {"id": course_id}
 
-        return cls.find_by_template(db_schema, table_name, template, field_list)
+        return cls.find_by_template(db_schema, table_name, template, order_by, limit, offset, field_list)
 
     @classmethod
     def delete_by_course_id(cls, db_schema, table_name, course_id):
@@ -38,11 +38,11 @@ class CoursesRDBService(RDBService):
         return cls.update_by_template(db_schema, table_name, data, template)
 
     @classmethod
-    def find_by_course_code(cls, db_schema, table_name, course_code, field_list):
+    def find_by_course_code(cls, db_schema, table_name, course_code, order_by=None, limit=None, offset=None, field_list=None):
 
         template = {"course_code": course_code}
 
-        return cls.find_by_template(db_schema, table_name, template, field_list)
+        return cls.find_by_template(db_schema, table_name, template, order_by, limit, offset, field_list)
 
     @classmethod
     def delete_by_course_code(cls, db_schema, table_name, course_code):
@@ -57,33 +57,6 @@ class CoursesRDBService(RDBService):
         template = {"course_code": course_code}
 
         return cls.update_by_template(db_schema, table_name, data, template)
-
-    @classmethod
-    def get_name_inputs(cls, person_type, name):
-        name_template = dict()
-        name_template[person_type] = name
-        return name_template
-
-    @classmethod
-    def find_by_name(cls, db_schema, table_name, person_type, name, field_list):
-
-        name_template = cls.get_name_inputs(person_type, name)
-
-        return cls.find_by_template(db_schema, table_name, name_template, field_list)
-
-    @classmethod
-    def delete_by_name(cls, db_schema, table_name, person_type, name):
-
-        name_template = cls.get_name_inputs(person_type, name)
-
-        return cls.delete_by_template(db_schema, table_name, name_template)
-
-    @classmethod
-    def update_by_name(cls, db_schema, table_name, person_type, name, data):
-
-        name_template = cls.get_name_inputs(person_type, name)
-
-        return cls.update_by_template(db_schema, table_name, data, name_template)
 
     @classmethod
     def create(cls, db_schema, table_name, create_data):

@@ -65,9 +65,17 @@ def course_collection():
         rest_utils.log_request("course_collection", inputs)
 
         if inputs.method == "GET":
-            res = CoursesResource.get_by_template(inputs.args)
+            limit = 5
+            if inputs.limit:
+                if int(inputs.limit) < limit:
+                    limit = int(inputs.limit)
+            offset = 0
+            if inputs.offset:
+                offset = int(inputs.offset)
+            order_by = inputs.order_by
+            res = CoursesResource.get_by_template(inputs.args, order_by=order_by, limit=limit, offset=offset, field_list=inputs.fields)
             if res:
-                res = CoursesResource.get_links(res)
+                res = CoursesResource.get_links(res, inputs)
             rsp = CoursesIntegrity.course_collection_get_responses(res)
         elif inputs.method == "POST":
             validation = CoursesIntegrity.input_validation(inputs.data)
@@ -148,9 +156,9 @@ def course_by_id(course_id):
 
         if inputs.method == "GET":
             if id_type == "id":
-                res = CoursesResource.get_by_course_id(course_id)
+                res = CoursesResource.get_by_course_id(course_id, order_by=order_by, limit=inputs.limit, offset=inputs.offset, field_list=inputs.fields)
             else:
-                res = CoursesResource.get_by_course_code(course_id)
+                res = CoursesResource.get_by_course_code(course_id, order_by=order_by, limit=inputs.limit, offset=inputs.offset, field_list=inputs.fields)
             if res is not None:
                 res = CoursesResource.get_links(res)
             if id_type == "id":

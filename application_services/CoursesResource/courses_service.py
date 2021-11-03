@@ -8,10 +8,9 @@ class CoursesResource(BaseRDBApplicationResource):
         super().__init__()
 
     @classmethod
-    def get_by_course_id(cls, course_id, field_list=None):
+    def get_by_course_id(cls, course_id, order_by=None, limit=None, offset=None, field_list=None):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.find_by_course_id(db_name, table_name,
-                                                  course_id, field_list)
+        res = CoursesRDBService.find_by_course_id(db_name, table_name, course_id, order_by, limit, offset, field_list)
         return res
 
     @classmethod
@@ -29,45 +28,21 @@ class CoursesResource(BaseRDBApplicationResource):
         return res
 
     @classmethod
-    def get_by_course_code(cls, course_code, field_list=None):
+    def get_by_course_code(cls, course_code, order_by=None, limit=None, offset=None, field_list=None):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.find_by_course_code(db_name, table_name,
-                                                  course_code, field_list)
+        res = CoursesRDBService.find_by_course_code(db_name, table_name, course_code, order_by, limit, offset, field_list)
         return res
 
     @classmethod
     def delete_by_course_code(cls, course_code):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.delete_by_course_code(db_name, table_name,
-                                                    course_code)
+        res = CoursesRDBService.delete_by_course_code(db_name, table_name, course_code)
         return res
 
     @classmethod
     def update_by_course_code(cls, course_code, data):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.update_by_course_code(db_name, table_name,
-                                                    course_code, data)
-        return res
-
-    @classmethod
-    def get_by_name(cls, person_type, name, field_list=None):
-        db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.find_by_name(db_name, table_name,
-                                             person_type, name, field_list)
-        return res
-
-    @classmethod
-    def delete_by_name(cls, person_type, name):
-        db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.delete_by_name(db_name, table_name,
-                                               person_type, name)
-        return res
-
-    @classmethod
-    def update_by_name(cls, person_type, name, data):
-        db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.update_by_name(db_name, table_name,
-                                               person_type, name, data)
+        res = CoursesRDBService.update_by_course_code(db_name, table_name, course_code, data)
         return res
 
     @classmethod
@@ -77,27 +52,70 @@ class CoursesResource(BaseRDBApplicationResource):
         return res
 
     @classmethod
-    def get_links(cls, resource_data):
-        for r in resource_data:
-            links = []
+    def get_links(cls, resource_data, inputs):
+        links = []
+        path_args = []
+        next_path_args = []
+        prev_path_args = []
 
-            id_values = []
-            id_keys = ["course_year", "course_sem", "dept", "course_number", "section"]
-            for key in id_keys:
-                id_values.append(str(r.get(key)))
+        path = inputs.path
+        next_path = inputs.path
+        prev_path = inputs.path
+        if inputs.args:
+            input_args = inputs.args
+            for k, v in input_args.items():
+                input_args[k] = v.replace(" ", "%20")
+            path_args.append("&".join(["=".join([k, str(v)]) for k, v in input_args.items()]))
+            next_path_args.append("&".join(["=".join([k, str(v)]) for k, v in input_args.items()]))
+            prev_path_args.append("&".join(["=".join([k, str(v)]) for k, v in input_args.items()]))
+        if inputs.fields:
+            path_args.append("&fields=" + inputs.fields)
+            next_path_args.append("&fields=" + inputs.fields)
+            prev_path_args.append("&fields=" + inputs.fields)
+        if inputs.order_by:
+            path_args.append("&order_by=" + inputs.order_by)
+            next_path_args.append("&order_by=" + inputs.order_by)
+            prev_path_args.append("&order_by=" + inputs.order_by)
+        else:
+            path_args.append("&order_by=id")
+            next_path_args.append("&order_by=id")
+            prev_path_args.append("&order_by=id")
+        limit = 5
+        if inputs.limit:
+            if int(inputs.limit) < limit:
+                limit = int(inputs.limit)
+        path_args.append("&limit=" + str(limit))
+        next_path_args.append("&limit=" + str(limit))
+        prev_path_args.append("&limit=" + str(limit))
+        offset = 0
+        if inputs.offset:
+            offset = int(inputs.offset)
+        path_args.append("&offset=" + str(offset))
+        next_path_args.append("&offset=" + str(offset + limit))
+        if offset != 0:
+            prev_path_args.append("&offset=" + str(offset - limit))
 
-            course_id_str = "_".join(id_values)
+        if path_args:
+            path += "?" + "".join(path_args)
+        if next_path_args:
+            next_path += "?" + "".join(next_path_args)
+        if prev_path_args:
+            prev_path += "?" + "".join(prev_path_args)
 
-            self_link_1 = {"rel": "self", "href": "/api/courses/" + str(r.get("id"))}
-            self_link_2 = {"rel": "self", "href": "/api/courses/" + course_id_str}
-            links.append(self_link_1)
-            links.append(self_link_2)
+        self_link = {"rel": "self", "href": path}
+        links.append(self_link)
+        next_link = {"rel": "next", "href": next_path}
+        links.append(next_link)
+        if offset != 0:
+            prev_link = {"rel": "prev", "href": prev_path}
+            links.append(prev_link)
 
-            r["links"] = links
+        links_dict = {"links": links}
+        resource_data.append(links_dict)
 
         return resource_data
 
     @classmethod
     def get_data_resource_info(cls):
-        return "cloud_computing_f21", "courses"
-        # return "oh_app", "courses"
+        # return "cloud_computing_f21", "courses"
+        return "oh_app", "courses"

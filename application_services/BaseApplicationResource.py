@@ -30,7 +30,7 @@ class BaseApplicationResource(ABC):
 
     @classmethod
     @abstractmethod
-    def get_links(cls, resource_data):
+    def get_links(cls, resource_data, inputs):
         pass
 
     @classmethod
@@ -45,10 +45,9 @@ class BaseRDBApplicationResource(BaseApplicationResource):
         super(BaseRDBApplicationResource, self).__init__()
 
     @classmethod
-    def get_by_template(cls, template, field_list=None):
+    def get_by_template(cls, template, order_by=None, limit=None, offset=None, field_list=None):
         db_name, table_name = cls.get_data_resource_info()
-        res = RDBService.find_by_template(db_name, table_name,
-                                          template, field_list)
+        res = RDBService.find_by_template(db_name, table_name, template, order_by, limit, offset, field_list)
         return res
 
     @classmethod
@@ -73,7 +72,7 @@ class BaseRDBApplicationResource(BaseApplicationResource):
 
     @classmethod
     @abstractmethod
-    def get_links(cls, resource_data):
+    def get_links(cls, resource_data, inputs):
         pass
 
     @classmethod
