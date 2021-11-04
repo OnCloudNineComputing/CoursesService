@@ -1,8 +1,10 @@
-from flask import Flask, Response, request
+from flask import Flask, Response, request, redirect, url_for
 from flask_cors import CORS
+from flask_dance.contrib.google import make_google_blueprint, google
 import json
 import logging
 from datetime import datetime
+import os
 
 import utils.rest_utils as rest_utils
 
@@ -16,7 +18,27 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
+
+app.config['CORS_HEADERS'] = 'Content-Type'
+app.secret_key = "supersekrit"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
+app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+google_bp = make_google_blueprint(scope=["profile", "email"], redirect_url="/api/login")
+app.register_blueprint(google_bp, url_prefix="/login")
+
 CORS(app)
+
+
+#########################################################################
+
+@app.route("/api/login", methods=["GET"])
+def authorization():
+    if not google.authorized:
+        return {'url': url_for("google.login")}
+    resp = google.get("/oauth2/v1/userinfo")
+    assert resp.ok, resp.text
+    return redirect("http://localhost:4200/dashboard")
 
 
 #########################################################################
@@ -73,7 +95,8 @@ def course_collection():
             if inputs.offset:
                 offset = int(inputs.offset)
             order_by = inputs.order_by
-            res = CoursesResource.get_by_template(inputs.args, order_by=order_by, limit=limit, offset=offset, field_list=inputs.fields)
+            res = CoursesResource.get_by_template(inputs.args, order_by=order_by, limit=limit, offset=offset,
+                                                  field_list=inputs.fields)
             if res:
                 res = CoursesResource.get_links(res, inputs)
             rsp = CoursesIntegrity.course_collection_get_responses(res)
@@ -156,9 +179,11 @@ def course_by_id(course_id):
 
         if inputs.method == "GET":
             if id_type == "id":
-                res = CoursesResource.get_by_course_id(course_id, order_by=order_by, limit=inputs.limit, offset=inputs.offset, field_list=inputs.fields)
+                res = CoursesResource.get_by_course_id(course_id, limit=inputs.limit, offset=inputs.offset,
+                                                       field_list=inputs.fields)
             else:
-                res = CoursesResource.get_by_course_code(course_id, order_by=order_by, limit=inputs.limit, offset=inputs.offset, field_list=inputs.fields)
+                res = CoursesResource.get_by_course_code(course_id, limit=inputs.limit, offset=inputs.offset,
+                                                         field_list=inputs.fields)
             if res is not None:
                 res = CoursesResource.get_links(res)
             if id_type == "id":
