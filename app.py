@@ -178,14 +178,20 @@ def course_by_id(course_id):
         rest_utils.log_request("course_by_id", inputs)
 
         if inputs.method == "GET":
+            limit = 5
+            if inputs.limit:
+                if int(inputs.limit) < limit:
+                    limit = int(inputs.limit)
+            offset = 0
+            if inputs.offset:
+                offset = int(inputs.offset)
+            order_by = inputs.order_by
             if id_type == "id":
-                res = CoursesResource.get_by_course_id(course_id, limit=inputs.limit, offset=inputs.offset,
-                                                       field_list=inputs.fields)
+                res = CoursesResource.get_by_course_id(course_id, order_by=order_by, limit=limit, offset=offset, field_list=inputs.fields)
             else:
-                res = CoursesResource.get_by_course_code(course_id, limit=inputs.limit, offset=inputs.offset,
-                                                         field_list=inputs.fields)
+                res = CoursesResource.get_by_course_code(course_id, order_by=order_by, limit=limit, offset=offset, field_list=inputs.fields)
             if res is not None:
-                res = CoursesResource.get_links(res)
+                res = CoursesResource.get_links(res, inputs)
             if id_type == "id":
                 rsp = CoursesIntegrity.course_by_id_get_responses(res)
             else:

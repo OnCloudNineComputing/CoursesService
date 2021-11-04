@@ -69,38 +69,38 @@ class CoursesResource(BaseRDBApplicationResource):
             next_path_args.append("&".join(["=".join([k, str(v)]) for k, v in input_args.items()]))
             prev_path_args.append("&".join(["=".join([k, str(v)]) for k, v in input_args.items()]))
         if inputs.fields:
-            path_args.append("&fields=" + inputs.fields)
-            next_path_args.append("&fields=" + inputs.fields)
-            prev_path_args.append("&fields=" + inputs.fields)
+            path_args.append("fields=" + inputs.fields)
+            next_path_args.append("fields=" + inputs.fields)
+            prev_path_args.append("fields=" + inputs.fields)
         if inputs.order_by:
-            path_args.append("&order_by=" + inputs.order_by)
-            next_path_args.append("&order_by=" + inputs.order_by)
-            prev_path_args.append("&order_by=" + inputs.order_by)
+            path_args.append("order_by=" + inputs.order_by)
+            next_path_args.append("order_by=" + inputs.order_by)
+            prev_path_args.append("order_by=" + inputs.order_by)
         else:
-            path_args.append("&order_by=id")
-            next_path_args.append("&order_by=id")
-            prev_path_args.append("&order_by=id")
+            path_args.append("order_by=id")
+            next_path_args.append("order_by=id")
+            prev_path_args.append("order_by=id")
         limit = 5
         if inputs.limit:
             if int(inputs.limit) < limit:
                 limit = int(inputs.limit)
-        path_args.append("&limit=" + str(limit))
-        next_path_args.append("&limit=" + str(limit))
-        prev_path_args.append("&limit=" + str(limit))
+        path_args.append("limit=" + str(limit))
+        next_path_args.append("limit=" + str(limit))
+        prev_path_args.append("limit=" + str(limit))
         offset = 0
         if inputs.offset:
             offset = int(inputs.offset)
-        path_args.append("&offset=" + str(offset))
-        next_path_args.append("&offset=" + str(offset + limit))
+        path_args.append("offset=" + str(offset))
+        next_path_args.append("offset=" + str(offset + limit))
         if offset != 0:
-            prev_path_args.append("&offset=" + str(offset - limit))
+            prev_path_args.append("offset=" + str(offset - limit))
 
         if path_args:
-            path += "?" + "".join(path_args)
+            path += "?" + "&".join(path_args)
         if next_path_args:
-            next_path += "?" + "".join(next_path_args)
+            next_path += "?" + "&".join(next_path_args)
         if prev_path_args:
-            prev_path += "?" + "".join(prev_path_args)
+            prev_path += "?" + "&".join(prev_path_args)
 
         self_link = {"rel": "self", "href": path}
         links.append(self_link)
@@ -117,5 +117,5 @@ class CoursesResource(BaseRDBApplicationResource):
 
     @classmethod
     def get_data_resource_info(cls):
-        # return "cloud_computing_f21", "courses"
-        return "oh_app", "courses"
+        return "cloud_computing_f21", "courses"
+        # return "oh_app", "courses"
