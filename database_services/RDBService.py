@@ -94,7 +94,8 @@ class RDBService(BaseDataResource):
         if field_list is None:
             sql = "SELECT * FROM " + db_schema + "." + table_name + " " + wc
         else:
-            sql = "SELECT " + ", ".join(field_list) + db_schema + "." + table_name + " " + wc
+            sql = "SELECT " + field_list + " FROM " + db_schema + "." + \
+                  table_name + " " + wc
 
         if order_by is not None:
             sql += " ORDER BY " + order_by
