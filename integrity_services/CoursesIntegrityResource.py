@@ -4,6 +4,7 @@ import json
 import logging
 import re
 from datetime import datetime
+import requests
 
 import utils.rest_utils as rest_utils
 
@@ -162,6 +163,23 @@ class CoursesIntegrity(BaseIntegrityResource):
         return 200, "Data Types Validated"
 
     @classmethod
+    def external_validation(cls, data):
+        # check Vergil API for universal course ID info
+        base_url = 'https://doc.search.columbia.edu/vergil-search-query.php?key='
+        query_str = data["dept"] + data["course_number"] + '_' + data["section"] + '_' + str(data["course_year"]) + '_'
+        semester_dict = {'Fall': '1', 'Spring': '2', 'Summer': '3'}
+        if data["course_sem"] in semester_dict:
+            query_str += semester_dict[data["course_sem"]]
+
+        payload = {}
+        headers = {}
+        response = requests.request("GET", base_url + query_str, headers=headers, data=payload)
+        json_res = json.loads(response.text[5:])
+        if len(json_res['items']) > 0:
+            return False
+        return True
+
+    @classmethod
     def input_validation(cls, data):
         input_fields = list(data.keys())
         errors = {}
@@ -180,6 +198,11 @@ class CoursesIntegrity(BaseIntegrityResource):
             errors.update(type_errors[1])
 
         if errors:
+            return 400, errors
+
+        vergil_errors = CoursesIntegrity.external_validation(data)
+        if vergil_errors:
+            errors['Course Info Validation'] = 'This course does not exist on Vergil'
             return 400, errors
 
         return 200, "Input Validated"
