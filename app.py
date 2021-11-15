@@ -210,7 +210,7 @@ def course_by_id(course_id):
                                                          offset=offset,
                                                          field_list=
                                                          inputs.fields)
-            if res is not None:
+            if res:
                 res = CoursesResource.get_links(res, inputs)
             if id_type == "id":
                 rsp = CoursesIntegrity.course_by_id_get_responses(res)
