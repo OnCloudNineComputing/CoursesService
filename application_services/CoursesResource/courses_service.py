@@ -1,4 +1,5 @@
-from application_services.BaseApplicationResource import BaseRDBApplicationResource
+from application_services.BaseApplicationResource import \
+    BaseRDBApplicationResource
 from database_services.CoursesRDBService import CoursesRDBService
 
 
@@ -8,9 +9,12 @@ class CoursesResource(BaseRDBApplicationResource):
         super().__init__()
 
     @classmethod
-    def get_by_course_id(cls, course_id, order_by=None, limit=None, offset=None, field_list=None):
+    def get_by_course_id(cls, course_id, order_by=None, limit=None,
+                         offset=None, field_list=None):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.find_by_course_id(db_name, table_name, course_id, order_by, limit, offset, field_list)
+        res = CoursesRDBService.find_by_course_id(db_name, table_name,
+                                                  course_id, order_by, limit,
+                                                  offset, field_list)
         return res
 
     @classmethod
@@ -28,21 +32,26 @@ class CoursesResource(BaseRDBApplicationResource):
         return res
 
     @classmethod
-    def get_by_course_code(cls, course_code, order_by=None, limit=None, offset=None, field_list=None):
+    def get_by_course_code(cls, course_code, order_by=None, limit=None,
+                           offset=None, field_list=None):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.find_by_course_code(db_name, table_name, course_code, order_by, limit, offset, field_list)
+        res = CoursesRDBService.find_by_course_code(db_name, table_name,
+                                                    course_code, order_by,
+                                                    limit, offset, field_list)
         return res
 
     @classmethod
     def delete_by_course_code(cls, course_code):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.delete_by_course_code(db_name, table_name, course_code)
+        res = CoursesRDBService.delete_by_course_code(db_name, table_name,
+                                                      course_code)
         return res
 
     @classmethod
     def update_by_course_code(cls, course_code, data):
         db_name, table_name = CoursesResource.get_data_resource_info()
-        res = CoursesRDBService.update_by_course_code(db_name, table_name, course_code, data)
+        res = CoursesRDBService.update_by_course_code(db_name, table_name,
+                                                      course_code, data)
         return res
 
     @classmethod
@@ -65,9 +74,12 @@ class CoursesResource(BaseRDBApplicationResource):
             input_args = inputs.args
             for k, v in input_args.items():
                 input_args[k] = v.replace(" ", "%20")
-            path_args.append("&".join(["=".join([k, str(v)]) for k, v in input_args.items()]))
-            next_path_args.append("&".join(["=".join([k, str(v)]) for k, v in input_args.items()]))
-            prev_path_args.append("&".join(["=".join([k, str(v)]) for k, v in input_args.items()]))
+            path_args.append("&".join(
+                ["=".join([k, str(v)]) for k, v in input_args.items()]))
+            next_path_args.append("&".join(
+                ["=".join([k, str(v)]) for k, v in input_args.items()]))
+            prev_path_args.append("&".join(
+                ["=".join([k, str(v)]) for k, v in input_args.items()]))
         if inputs.fields:
             path_args.append("fields=" + inputs.fields)
             next_path_args.append("fields=" + inputs.fields)

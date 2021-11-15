@@ -119,7 +119,8 @@ def log_response(method, status, data, txt):
         "data": data
     }
 
-    logger.debug(str(datetime.now()) + ": \n" + json.dumps(msg, indent=2, default=str))
+    logger.debug(str(datetime.now()) + ": \n" + json.dumps(msg, indent=2,
+                                                           default=str))
 
 
 def log_request(method_name, request_context):

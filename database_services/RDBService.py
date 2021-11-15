@@ -84,7 +84,8 @@ class RDBService(BaseDataResource):
         return clause, args
 
     @classmethod
-    def find_by_template(cls, db_schema, table_name, template, order_by=None, limit=None, offset=None, field_list=None):
+    def find_by_template(cls, db_schema, table_name, template, order_by=None,
+                         limit=None, offset=None, field_list=None):
 
         wc, args = RDBService.get_where_clause_args(template)
 
@@ -123,7 +124,8 @@ class RDBService(BaseDataResource):
         res = cur.execute(sql, args=args)
         res = cur.fetchall()
 
-        sql = "ALTER TABLE " + db_schema + "." + table_name + " AUTO_INCREMENT = 1"
+        sql = "ALTER TABLE " + db_schema + "." + table_name + \
+              " AUTO_INCREMENT = 1"
         cur.execute(sql)
 
         conn.close()
@@ -131,7 +133,8 @@ class RDBService(BaseDataResource):
         return res
 
     @classmethod
-    def update_by_template(cls, db_schema, table_name, data_template, where_template):
+    def update_by_template(cls, db_schema, table_name, data_template,
+                           where_template):
 
         wc, where_args = RDBService.get_where_clause_args(where_template)
 
@@ -152,7 +155,8 @@ class RDBService(BaseDataResource):
         conn = RDBService.get_db_connection()
         cur = conn.cursor()
 
-        sql = "UPDATE " + db_schema + "." + table_name + " SET " + ", ".join(terms) + wc
+        sql = "UPDATE " + db_schema + "." + table_name + " SET " + \
+              ", ".join(terms) + wc
         res = cur.execute(sql, args=args)
         res = cur.fetchall()
 
@@ -172,8 +176,8 @@ class RDBService(BaseDataResource):
         cols_clause = "(" + ",".join(cols) + ")"
         vals_clause = "VALUES (" + ",".join(vals) + ")"
 
-        sql_stmt = "INSERT INTO " + db_schema + "." + table_name + " " + cols_clause + \
-                   " " + vals_clause
+        sql_stmt = "INSERT INTO " + db_schema + "." + table_name + " " + \
+                   cols_clause + " " + vals_clause
 
         res = RDBService.run_sql(sql_stmt, args)
 

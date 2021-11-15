@@ -17,11 +17,26 @@ class CoursesRDBService(RDBService):
         return values
 
     @classmethod
-    def find_by_course_id(cls, db_schema, table_name, course_id, order_by=None, limit=None, offset=None, field_list=None):
+    def generate_course_code(cls, data):
+        keys = ["course_year", "course_sem", "dept", "course_number", "section"]
+        values = []
+
+        for key in keys:
+            values.append(data[key])
+
+        code = '_'.join(map(str, values))
+
+        return code
+
+    @classmethod
+    def find_by_course_id(cls, db_schema, table_name, course_id,
+                          order_by=None, limit=None, offset=None,
+                          field_list=None):
 
         template = {"id": course_id}
 
-        return cls.find_by_template(db_schema, table_name, template, order_by, limit, offset, field_list)
+        return cls.find_by_template(db_schema, table_name, template,
+                                    order_by, limit, offset, field_list)
 
     @classmethod
     def delete_by_course_id(cls, db_schema, table_name, course_id):
@@ -38,11 +53,14 @@ class CoursesRDBService(RDBService):
         return cls.update_by_template(db_schema, table_name, data, template)
 
     @classmethod
-    def find_by_course_code(cls, db_schema, table_name, course_code, order_by=None, limit=None, offset=None, field_list=None):
+    def find_by_course_code(cls, db_schema, table_name, course_code,
+                            order_by=None, limit=None, offset=None,
+                            field_list=None):
 
         template = {"course_code": course_code}
 
-        return cls.find_by_template(db_schema, table_name, template, order_by, limit, offset, field_list)
+        return cls.find_by_template(db_schema, table_name, template,
+                                    order_by, limit, offset, field_list)
 
     @classmethod
     def delete_by_course_code(cls, db_schema, table_name, course_code):
@@ -61,8 +79,10 @@ class CoursesRDBService(RDBService):
     @classmethod
     def create(cls, db_schema, table_name, create_data):
 
-        id_keys = ["course_year", "course_sem", "dept", "course_number", "section"]
-        course_id = {key: value for key, value in create_data.items() if key in id_keys}
+        id_keys = ["course_year", "course_sem", "dept", "course_number",
+                   "section"]
+        course_id = {key: value for key, value in create_data.items() if key
+                     in id_keys}
         course_matches = cls.find_by_template(db_schema, table_name, course_id)
         if not course_matches:
             cols = []
@@ -77,8 +97,8 @@ class CoursesRDBService(RDBService):
             cols_clause = "(" + ",".join(cols) + ")"
             vals_clause = "VALUES (" + ",".join(vals) + ")"
 
-            sql_stmt = "INSERT INTO " + db_schema + "." + table_name + " " + cols_clause + \
-                       " " + vals_clause
+            sql_stmt = "INSERT INTO " + db_schema + "." + table_name + " " + \
+                       cols_clause + " " + vals_clause
 
             res = cls.run_sql(sql_stmt, args)
 

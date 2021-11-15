@@ -12,7 +12,8 @@ def test_1():
 def test_2():
 
     res = RDBService.find_by_template(
-        "cloud_computing_f21", "courses", {"course_name": "Cloud Computing"}, None
+        "cloud_computing_f21", "courses", {"course_name": "Cloud Computing"},
+        None
     )
     print("Test 2 result = ", res)
 
@@ -29,12 +30,11 @@ def test_3():
             "course_number": "W4701",
             "section": "002",
             "credits": 3,
-            "call_number": 13267,
-            "professors": "Ansaf Salleb-Aouissi",
-            "TAs": "Rohith Ravindranath, Tom Cohen, Adam Lin, Justin Ghaeli, Ariel Goldman, Joseph Brew, Caitlyn Chen, Nicholas Lillis, Michael Winitch, Elyas Obbad, Gustave Ducrest, Joe Redmond, Chandan Suri, Sanya Mehta, Akhil Konda, Andrea Clark Sevilla, Keshaw Singh, Evan Zauderer, Pierre Rodgers",
+            "professor": "Ansaf Salleb-Aouissi",
+            "TA": "Tom Cohen",
             "course_days": "TR",
-            "start_time": "11:40:00",
-            "end_time": "12:55:00",
+            "start_time": "11:40 AM",
+            "end_time": "12:55 PM",
             "location": "CIN Alfred Lerner Hall",
             "enrollment": 153
         })
