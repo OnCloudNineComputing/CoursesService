@@ -188,7 +188,7 @@ class CoursesIntegrity(BaseIntegrityResource):
                    'vergil-search-query.php?key='
         query_str = data["dept"] + data["course_number"] + '_' + data[
             "section"] + '_' + str(data["course_year"]) + '_'
-        semester_dict = {'Fall': '1', 'Spring': '2', 'Summer': '3'}
+        semester_dict = {'Fall': '3', 'Spring': '1', 'Summer': '2'}
         if data["course_sem"] in semester_dict:
             query_str += semester_dict[data["course_sem"]]
 
