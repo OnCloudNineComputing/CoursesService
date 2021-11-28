@@ -10,6 +10,9 @@ import utils.rest_utils as rest_utils
 
 from application_services.CoursesResource.courses_service \
     import CoursesResource
+
+from application_services.CoursesResource.course_ta_service \
+    import CoursesTAResource
 from integrity_services.CoursesIntegrityResource import CoursesIntegrity
 from database_services.CoursesRDBService import CoursesRDBService
 
@@ -59,6 +62,37 @@ def health_check():
 @app.route('/api')
 def landing_page():
     return '<u>OH Application Courses Microservice</u>'
+
+
+@app.route('/api/courses/<course_id>/ta', methods=['GET', 'POST', 'DELETE'])
+def course_ta(course_id):
+    """
+    GET: return list of TAs in <course_id>
+    POST: Add a TA to a course
+        format: {
+            course_id: 1,
+            uni: ab1234
+        }
+    DELETE: Delete a TA from a course
+        format: {
+            uni: ab1234
+        }
+    :param course_id:
+    :return:
+    """
+    if request.method == "GET":
+        res = CoursesTAResource.get_by_id(course_id)
+        rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
+        return rsp
+    elif request.method == 'POST':
+        res = CoursesTAResource.create(request.json)
+        rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
+        return rsp
+
+    elif request.method == 'DELETE':
+        res = CoursesTAResource.delete_by_id(request.json)
+        rsp = Response(json.dumps(res, default=str), status=200, content_type="application/json")
+        return rsp
 
 
 @app.route('/api/courses', methods=['GET', 'POST', 'PUT', 'DELETE'])
@@ -274,4 +308,4 @@ def course_by_id(course_id):
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5002)
