@@ -13,9 +13,8 @@ class CoursesIntegrity(BaseIntegrityResource):
         super(CoursesIntegrity, self).__init__()
 
     field_list = ["course_name", "course_year", "course_sem", "dept",
-                  "course_number", "section", "professor", "TA", "credits",
-                  "course_days", "start_time", "end_time", "location",
-                  "enrollment"]
+                  "course_number", "section", "credits", "course_days",
+                  "start_time", "end_time", "location", "enrollment"]
     required_fields = ["course_name", "course_year", "course_sem", "dept",
                        "course_number", "section", "credits",
                        "course_days"]
