@@ -21,18 +21,18 @@ Example JSON:
 
 ```json
 {
-   "course_name": "Cloud Computing",
-   "course_year": 2021,
-   "course_sem": "Fall",
-   "dept": "COMS",
-   "course_number": "E6156",
-   "section": "001",
-   "credits": 3,
-   "course_days": "F",
-   "start_time": "1:10 PM",
-   "end_time": "3:40 PM",
-   "location": "501 Northwest Corner Building",
-   "enrollment": 171
+  "course_name": "Cloud Computing",
+  "course_year": 2021,
+  "course_sem": "Fall",
+  "dept": "COMS",
+  "course_number": "E6156",
+  "section": "001",
+  "credits": 3,
+  "course_days": "F",
+  "start_time": "1:10 PM",
+  "end_time": "3:40 PM",
+  "location": "501 Northwest Corner Building",
+  "enrollment": 171
 }
 
 ```
@@ -48,16 +48,16 @@ Example JSON:
 
 ```json
 {
-"update_fields": {
-"field1": "value",
-"field2": "value",
-"last_field": "value"
-},
-"where_fields": {
-"field1": "value",
-"field2": "value",
-"last_field": "value"
-}
+  "update_fields": {
+    "field1": "value",
+    "field2": "value",
+    "last_field": "value"
+  },
+  "where_fields": {
+    "field1": "value",
+    "field2": "value",
+    "last_field": "value"
+  }
 ```
 
 <ul>
@@ -88,9 +88,9 @@ information provided</li>
 
 ```json
 {
-"field1": "value",
-"field2": "value",
-"last_field": "value"
+  "field1": "value",
+  "field2": "value",
+  "last_field": "value"
 }
 ```
 
@@ -114,9 +114,9 @@ Example JSON:
 
 ```json
 {
-   "TA": "Srujan Esanakarra",
-   "uni": "ve2170",
-   "course_id": 1
+  "TA": "Srujan Esanakarra",
+  "uni": "ve2170",
+  "course_id": 1
 }
 
 ```
@@ -132,16 +132,16 @@ Example JSON:
 
 ```json
 {
-"update_fields": {
-"field1": "value",
-"field2": "value",
-"last_field": "value"
-},
-"where_fields": {
-"field1": "value",
-"field2": "value",
-"last_field": "value"
-}
+  "update_fields": {
+    "field1": "value",
+    "field2": "value",
+    "last_field": "value"
+  },
+  "where_fields": {
+    "field1": "value",
+    "field2": "value",
+    "last_field": "value"
+  }
 ```
 
 <ul>
@@ -161,9 +161,9 @@ course IDs</li>
 
 ```json
 {
-"field1": "value",
-"field2": "value",
-"last_field": "value"
+  "field1": "value",
+  "field2": "value",
+  "last_field": "value"
 }
 ```
 
@@ -188,9 +188,9 @@ Example JSON:
 
 ```json
 {
-   "TA": "Donald F Ferguson",
-   "uni": "dff9",
-   "course_id": 1
+  "TA": "Donald F Ferguson",
+  "uni": "dff9",
+  "course_id": 1
 }
 
 ```
@@ -206,16 +206,16 @@ Example JSON:
 
 ```json
 {
-"update_fields": {
-"field1": "value",
-"field2": "value",
-"last_field": "value"
-},
-"where_fields": {
-"field1": "value",
-"field2": "value",
-"last_field": "value"
-}
+  "update_fields": {
+    "field1": "value",
+    "field2": "value",
+    "last_field": "value"
+  },
+  "where_fields": {
+    "field1": "value",
+    "field2": "value",
+    "last_field": "value"
+  }
 ```
 
 <ul>
@@ -237,9 +237,9 @@ provided</li>
 
 ```json
 {
-"field1": "value",
-"field2": "value",
-"last_field": "value"
+  "field1": "value",
+  "field2": "value",
+  "last_field": "value"
 }
 ```
 
