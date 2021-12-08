@@ -1,6 +1,6 @@
 from application_services.BaseApplicationResource import \
     BaseRDBApplicationResource
-from database_services.CoursesRDBService import CoursesRDBService
+from database_services.RDBServices.CoursesRDBService import CoursesRDBService
 
 
 class CoursesResource(BaseRDBApplicationResource):

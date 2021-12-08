@@ -1,12 +1,8 @@
-from flask import Flask, Response, request
-from flask_cors import CORS
+from flask import Response
 import json
-import logging
 import re
 from datetime import datetime
 import requests
-
-import utils.rest_utils as rest_utils
 
 from integrity_services.BaseIntegrityResource import BaseIntegrityResource
 
@@ -21,7 +17,7 @@ class CoursesIntegrity(BaseIntegrityResource):
                   "course_days", "start_time", "end_time", "location",
                   "enrollment"]
     required_fields = ["course_name", "course_year", "course_sem", "dept",
-                       "course_number", "section", "professor", "credits",
+                       "course_number", "section", "credits",
                        "course_days"]
 
     @classmethod
